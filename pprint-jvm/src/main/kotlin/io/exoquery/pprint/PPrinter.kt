@@ -1,60 +1,12 @@
 package io.exoquery.pprint
 
 import io.exoquery.fansi.Attrs
-import java.util.*
-import kotlin.collections.LinkedHashMap
-import kotlin.reflect.full.allSuperclasses
+import java.util.SortedMap
+import kotlin.reflect.full.*
 
-/**
- * A lazy AST representing pretty-printable text. Models `foo(a, b)`
- * `foo op bar`, and terminals `foo` in both lazy and eager forms
- */
-sealed interface Tree {
+class PPrinter(override val config: PPrinterConfig): PPrinterBase(config) {
 
-  /**
-   * Foo(aa, bbb, cccc)
-   */
-  data class Apply(val prefix: String, val body: Iterator<Tree>): Tree
-
-  /**
-   * LHS op RHS
-   */
-  data class Infix(val lhs: Tree, val op: String, val rhs: Tree): Tree
-
-  /**
-   * "xyz"
-   */
-  data class Literal(val body: String): Tree{
-    val hasNewLine = body.any { c -> c == '\n' || c == '\r' }
-  }
-
-  /**
-   * x = y
-   */
-  data class KeyValue(val key: String, val value: Tree): Tree
-
-  /**
-   * xyz
-   */
-  data class Lazy(val body0: (Ctx) -> Iterator<String>): Tree
-
-  data class Ctx(
-    val width: Int,
-    val leftOffset: Int,
-    val indentCount: Int,
-    val indentStep: Int,
-    val literalColor: Attrs,
-    val applyPrefixColor: Attrs
-  )
-}
-
-interface Walker {
-  val showGenericForCollections: Boolean
-
-  // No additional handlers. To extend, override the treeify function
-  // fun additionalHandlers: PartialFunction<Any, Tree>
-
-  fun treeify(x: Any?, escapeUnicode: Boolean, showFieldNames: Boolean): Tree {
+  override fun treeify(x: Any?, escapeUnicode: Boolean, showFieldNames: Boolean): Tree {
     fun treeifySame(x: Any?) = treeify(x, escapeUnicode, showFieldNames)
 
     fun <T> applyArray(name: String, seq: Sequence<T>) =
@@ -198,7 +150,13 @@ interface Walker {
     }
   }
 
-
+  companion object {
+    val Color = PPrinter(PPrinterConfig())
+    val BlackWhite = PPrinter(
+      PPrinterConfig().copy(
+        colorLiteral = Attrs.Empty,
+        colorApplyPrefix = Attrs.Empty
+      )
+    )
+  }
 }
-
-

@@ -27,7 +27,7 @@ data class PPrinterConfig(
   * @param additionalHandlers Provide this to override how certain types are
   *                           pretty-printed at runtime
   */
-open class PPrinter(val config: PPrinterConfig): Walker {
+abstract class PPrinterBase(open val config: PPrinterConfig): Walker {
   override val showGenericForCollections get() = config.showGenericForCollections
 
   /**
@@ -102,16 +102,6 @@ open class PPrinter(val config: PPrinterConfig): Walker {
     // beyond the desired height
     val truncated = Truncated(rendered, width, height)
     return truncated
-  }
-
-  companion object {
-    val Color = PPrinter(PPrinterConfig())
-    val BlackWhite = PPrinter(
-      PPrinterConfig().copy(
-        colorLiteral = Attrs.Empty,
-        colorApplyPrefix = Attrs.Empty
-      )
-    )
   }
 }
 

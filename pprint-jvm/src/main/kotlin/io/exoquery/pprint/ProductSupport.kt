@@ -42,8 +42,8 @@ object ProductSupport {
       productElementNames
         .withIndex()
         .map { (i, name) ->
-            val elem = props[i].invoke(x)
-            Tree.KeyValue(name, walker.treeify(elem, escapeUnicode, showFieldNames))
+          val elem = props[i].invoke(x)
+          Tree.KeyValue(name, walker.treeify(elem, escapeUnicode, showFieldNames))
         }.iterator()
   }
 
