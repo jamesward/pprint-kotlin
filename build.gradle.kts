@@ -1,154 +1,190 @@
-buildscript {
-    repositories {
-        gradlePluginPortal()
-        google()
-        mavenCentral()
-    }
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 
-    dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21")
-        classpath("com.android.tools.build:gradle:8.2.2")
+plugins {
+    kotlin("multiplatform") version "1.9.22"
+    kotlin("plugin.serialization") version "1.9.22"
+    `maven-publish`
+    id("io.kotest.multiplatform") version "5.8.0"
+    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
+    id("org.jetbrains.dokka") version "1.9.10"
+    signing
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+        }
     }
 }
 
-subprojects {
-    repositories {
-        mavenCentral()
-    }
-}
+group = "io.exoquery"
+version = "1.2.2-SNAPSHOT"
 
 repositories {
     mavenCentral()
 }
 
-//plugins {
-//    kotlin("jvm") version "1.9.21"
-//    `java-library`
-//    `maven-publish`
-//    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
-//    id("org.jetbrains.dokka") version "1.9.10"
-//    id("signing")
-//}
-//
-//nexusPublishing {
-//    repositories {
-//        sonatype {
-//            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-//            snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
-//        }
-//    }
-//}
-//
-//apply(plugin = "io.github.gradle-nexus.publish-plugin")
-//
-//group = "io.exoquery"
-//version = "1.1.0"
-//
-//apply(plugin = "kotlin")
-//apply(plugin = "maven-publish")
-//
-//repositories {
-//    mavenCentral()
-//    maven(url = "https://plugins.gradle.org/m2/")
-//    maven(url = "https://jitpack.io")
-//}
-//
-//dependencies {
-//    testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
-//    implementation(kotlin("reflect"))
-//}
-//
-//// Needed for Kotest
-//tasks.withType<Test>().configureEach {
-//    useJUnitPlatform()
-//}
-//
-//kotlin {
-//    jvmToolchain(8)
-//}
-//
-//// backward compat for users on older versions of Kotlin
-//// we use "data objects" in test code, so limit this to production code
-//tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>("compileKotlin") {
-//    compilerOptions.apply {
-//        apiVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_6)
-//        languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_6)
-//    }
-//}
-//
-//allprojects {
-//
-//    val varintName = project.name
-//
-//    apply {
-//        plugin("org.jetbrains.kotlin.jvm")
-//        plugin("org.jetbrains.dokka")
-//    }
-//
-//    val dokkaHtml by tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class)
-//
-//    tasks {
-//        val javadocJar by creating(Jar::class) {
-//            dependsOn(dokkaHtml)
-//            archiveClassifier.set("javadoc")
-//            from(dokkaHtml.outputDirectory)
-//        }
-//        val sourcesJar by creating(Jar::class) {
-//            archiveClassifier.set("sources")
-//            from(sourceSets["main"].allSource)
-//        }
-//    }
-//
-//    publishing {
-//        publications {
-//            create<MavenPublication>("mavenJava") {
-//                from(components["kotlin"])
-//                artifactId = varintName
-//
-//                artifact(tasks["javadocJar"])
-//                artifact(tasks["sourcesJar"])
-//
-//                pom {
-//                    name.set("decomat")
-//                    description.set("DecoMat - Deconstructive Pattern Matching for Kotlin")
-//                    url.set("https://github.com/deusaquilus/pprint-kotlin")
-//
-//                    licenses {
-//                        license {
-//                            name.set("The Apache Software License, Version 2.0")
-//                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-//                            distribution.set("repo")
-//                        }
-//                    }
-//
-//                    developers {
-//                        developer {
-//                            name.set("Alexander Ioffe")
-//                            email.set("deusaquilus@gmail.com")
-//                            organization.set("github")
-//                            organizationUrl.set("http://www.github.com")
-//                        }
-//                    }
-//
-//                    scm {
-//                        url.set("https://github.com/exoquery/decomat/tree/main")
-//                        connection.set("scm:git:git://github.com/ExoQuery/DecoMat.git")
-//                        developerConnection.set("scm:git:ssh://github.com:ExoQuery/DecoMat.git")
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    // Check the 'skipSigning' project property
-//    if (!project.hasProperty("nosign")) {
-//        // If 'skipSigning' is not present, apply the signing plugin and configure it
-//        apply(plugin = "signing")
-//
-//        signing {
-//            // use the properties passed as command line args
-//            // -Psigning.keyId=${{secrets.SIGNING_KEY_ID}} -Psigning.password=${{secrets.SIGNING_PASSWORD}} -Psigning.secretKeyRingFile=$(echo ~/.gradle/secring.gpg)
-//            sign(publishing.publications["mavenJava"])
-//        }
-//    }
-//}
+// Needed for Kotest
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvm {
+        jvmToolchain(8)
+    }
+
+    linuxX64()
+
+    /*
+    js {
+        browser()
+        nodejs()
+    }
+     */
+
+    // todo: kotest doesn't have wasm targets yet
+    /*
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs()
+
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmWasi()
+     */
+
+    /*
+    macosArm64()
+
+    iosArm64()
+     */
+
+    /*
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    applyHierarchyTemplate {
+        withSourceSetTree(KotlinSourceSetTree.main, KotlinSourceSetTree.test)
+
+        common {
+            withCompilations { true }
+
+            group("serial") {
+                group("jvmSerial") {
+                    //withJvm()
+                }
+                group("linuxSerial") {
+                    withLinuxX64()
+                }
+                group("jsSerial") {
+                    withJs()
+                }
+            }
+            group("reflect") {
+                withJvm()
+                //group("jvm")
+            }
+        }
+    }
+     */
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation("io.kotest:kotest-assertions-core:5.8.0")
+                implementation("io.kotest:kotest-framework-engine:5.8.0")
+                implementation(kotlin("test-common"))
+                implementation(kotlin("test-annotations-common"))
+            }
+        }
+
+        jvmMain {
+            dependencies {
+                api(kotlin("reflect"))
+            }
+        }
+
+        jvmTest {
+            dependencies {
+                implementation("io.kotest:kotest-runner-junit5:5.8.0")
+            }
+        }
+    }
+
+}
+
+// todo
+//   Util uses toHexString which is new in 1.9
+//   Issue in 1.6 with shadowing
+/*
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    kotlinOptions {
+        languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_6.version
+        apiVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_6.version
+    }
+}
+ */
+
+tasks.named<Test>("jvmTest") {
+    useJUnitPlatform()
+}
+
+tasks.withType<AbstractTestTask>().configureEach {
+    testLogging {
+        showStandardStreams = true
+        showExceptions = true
+        exceptionFormat = TestExceptionFormat.FULL
+        events(TestLogEvent.STARTED, TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
+    }
+}
+
+val varintName = project.name
+
+val dokkaHtml by tasks.getting(org.jetbrains.dokka.gradle.DokkaTask::class)
+
+publishing {
+    publications.withType<MavenPublication> {
+        pom {
+            name.set("decomat")
+            description.set("DecoMat - Deconstructive Pattern Matching for Kotlin")
+            url.set("https://github.com/deusaquilus/pprint-kotlin")
+
+            licenses {
+                license {
+                    name.set("The Apache Software License, Version 2.0")
+                    url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                    distribution.set("repo")
+                }
+            }
+
+            developers {
+                developer {
+                    name.set("Alexander Ioffe")
+                    email.set("deusaquilus@gmail.com")
+                    organization.set("github")
+                    organizationUrl.set("http://www.github.com")
+                }
+            }
+
+            scm {
+                url.set("https://github.com/exoquery/decomat/tree/main")
+                connection.set("scm:git:git://github.com/ExoQuery/DecoMat.git")
+                developerConnection.set("scm:git:ssh://github.com:ExoQuery/DecoMat.git")
+            }
+        }
+    }
+}
+
+signing {
+    sign(publishing.publications)
+}
+
+tasks.withType<Sign> {
+    onlyIf { !project.hasProperty("nosign") }
+}
