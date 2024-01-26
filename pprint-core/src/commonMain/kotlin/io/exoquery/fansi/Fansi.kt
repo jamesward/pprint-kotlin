@@ -480,7 +480,7 @@ sealed interface Attrs{
 
   class Multiple(override val resetMask: Long, override val applyMask: Long, vararg val attrs: Attr): Attrs {
     init {
-      if (attrs.size != 1) throw IllegalArgumentException("Not allowed zero attributes")
+      if (attrs.size == 1) throw IllegalArgumentException("Not allowed just one attribute")
     }
 
     override fun hashCode() = attrs.hashCode()

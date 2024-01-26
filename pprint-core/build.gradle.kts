@@ -33,6 +33,8 @@ kotlin {
     } }
     val jvmTest by getting { dependencies {
       implementation("io.kotest:kotest-runner-junit5:5.8.0")
+      // Seems to be needed for kotest
+      implementation(kotlin("reflect"))
     } }
 //    val androidMain by getting { dependencies {
 //    } }
