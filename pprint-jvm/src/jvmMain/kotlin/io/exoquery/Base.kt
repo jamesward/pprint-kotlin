@@ -2,7 +2,7 @@ package io.exoquery
 
 import io.exoquery.fansi.Attrs
 import io.exoquery.fansi.Color
-import io.exoquery.pprint.PPrinter
+import exoquery.pprint.PPrinter
 import io.exoquery.pprint.PPrinterConfig
 
 fun pprint(

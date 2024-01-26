@@ -4,7 +4,7 @@ import io.exoquery.fansi.Attrs
 import java.util.SortedMap
 import kotlin.reflect.full.*
 
-class PPrinter(override val config: PPrinterConfig): PPrinterBase(config) {
+class PPrinter(override val config: PPrinterConfig = PPrinterConfig()): PPrinterBase<Any?>(config) {
 
   override fun treeify(x: Any?, escapeUnicode: Boolean, showFieldNames: Boolean): Tree {
     fun treeifySame(x: Any?) = treeify(x, escapeUnicode, showFieldNames)
@@ -16,23 +16,14 @@ class PPrinter(override val config: PPrinterConfig): PPrinterBase(config) {
 
       x == null -> Tree.Literal("null")
       x is Boolean -> Tree.Literal(x.toString())
-      x is Char -> {
-        val sb = StringBuilder()
-        sb.append('\'')
-        Util.escapeChar(x, sb, escapeUnicode)
-        sb.append('\'')
-        Tree.Literal(sb.toString())
-      }
+      x is Char -> Tree.encodeChar(x, escapeUnicode)
       x is Byte -> Tree.Literal(x.toString())
       x is Short -> Tree.Literal(x.toString())
       x is Int -> Tree.Literal(x.toString())
       x is Long -> Tree.Literal(x.toString() + "L")
       x is Float -> Tree.Literal(x.toString() + "F")
       x is Double -> Tree.Literal(x.toString())
-      x is String -> {
-        if (x.any {c -> c == '\n' || c == '\r'}) Tree.Literal("\"\"\"" + x + "\"\"\"")
-        else Tree.Literal(Util.literalize(x.toCharArray(), escapeUnicode))
-      }
+      x is String -> Tree.encodeString(x, escapeUnicode)
 
       // No Symbol in Kotlin
       //x is Symbol -> Tree.Literal("'" + x.name)

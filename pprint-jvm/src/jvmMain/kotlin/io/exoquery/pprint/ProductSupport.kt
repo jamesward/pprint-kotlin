@@ -27,7 +27,7 @@ object ProductSupport {
   fun treeifyProductElements(
     x: Any,
     cls: KClass<*>,
-    walker: Walker,
+    walker: Walker<Any?>,
     escapeUnicode: Boolean,
     showFieldNames: Boolean
   ): Iterator<Tree>

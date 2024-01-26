@@ -1,7 +1,5 @@
 package io.exoquery.fansi
 
-import java.util.Arrays
-
 typealias State = Long
 
 fun CharSequence.toStr() = Str(this)
@@ -27,7 +25,7 @@ data class Name(val value: String) {
  * giving 20% (on `++`) to >1000% (on `splitAt`, `subString`
  * and `Str.parse`) speedups
  */
-class Str private constructor(private val chars: Array<Char>, private val colors: Array<State>) {
+class Str private constructor(private val chars: CharArray, private val colors: Array<State>) {
   //require(chars.length == colors.length)
 
   private fun require(condition: Boolean) {
@@ -41,12 +39,12 @@ class Str private constructor(private val chars: Array<Char>, private val colors
     if (!condition) throw IllegalArgumentException(message)
   }
 
-  override fun hashCode() = java.util.Arrays.hashCode(chars) + java.util.Arrays.hashCode(colors)
+  override fun hashCode() = chars.hashCode() + colors.hashCode()
 
   override fun equals(other: Any?) =
     when (other) {
       is Str ->
-        java.util.Arrays.equals(chars, other.chars) && Arrays.equals(colors, other.colors)
+        chars contentEquals other.chars && colors contentEquals other.colors
       else -> false
     }
 
@@ -55,11 +53,13 @@ class Str private constructor(private val chars: Array<Char>, private val colors
    * avoiding any interference between them
    */
   operator fun plus(other: Str): Str {
-    val newChars = Arrays.copyOf(chars, chars.size + other.chars.size)
-    val newColors = Arrays.copyOf(colors, colors.size + other.colors.size)
-    System.arraycopy(other.chars, 0, newChars, chars.size, other.chars.size)
-    System.arraycopy(other.colors, 0, newColors, colors.size, other.colors.size)
-    return Str(newChars, newColors)
+    val newChars = chars.copyOf(chars.size + other.chars.size)
+    val newColors = colors.copyOf(colors.size + other.colors.size)
+    // System.arraycopy(other.chars, 0, newChars, chars.size, other.chars.size)
+    other.chars.copyInto(newChars, chars.size, 0, other.chars.size)
+    // System.arraycopy(other.colors, 0, newColors, colors.size, other.colors.size)
+    other.colors.copyInto(newColors, colors.size, 0, other.chars.size)
+    return Str(newChars, newColors as Array<State>)
   }
 
   /**
@@ -71,8 +71,10 @@ class Str private constructor(private val chars: Array<Char>, private val colors
    */
   fun splitAt(index: Int) =
     Pair(
-      Str(Arrays.copyOfRange(chars, 0, index), Arrays.copyOfRange(colors, 0, index)),
-      Str(Arrays.copyOfRange(chars, index, chars.size), Arrays.copyOfRange(colors, index, colors.size))
+      // Str(Arrays.copyOfRange(chars, 0, index), Arrays.copyOfRange(colors, 0, index)),
+      Str(chars.copyOfRange(0, index), colors.copyOfRange(0, index)),
+      // Str(Arrays.copyOfRange(chars, index, chars.size), Arrays.copyOfRange(colors, index, colors.size))
+      Str(chars.copyOfRange(index, chars.size), colors.copyOfRange(index, colors.size))
     )
 
 
@@ -88,7 +90,7 @@ class Str private constructor(private val chars: Array<Char>, private val colors
     require(end >= start) {
       "substring end parameter $end must be >= start parameter $start"
     }
-    return Str(Arrays.copyOfRange(chars, start, end), Arrays.copyOfRange(colors, start, end))
+    return Str(chars.copyOfRange(start, end), colors.copyOfRange(start, end))
   }
 
   /**
@@ -105,13 +107,13 @@ class Str private constructor(private val chars: Array<Char>, private val colors
    * The plain-text `java.lang.String` represented by this [[fansi.Str]],
    * without all the fansi colors or other decorations
    */
-  val plainText: String by lazy { String(chars.toCharArray()) }
+  val plainText: String by lazy { chars.concatToString() }
 
     /**
     * Returns a copy of the colors array backing this `fansi.Str`, in case
     * you want to use it to
     */
-  fun getColors() = colors.clone()
+  fun getColors() = colors.copyOf()
 
   /**
     * Retrieve the color of this string at the given character index
@@ -121,7 +123,7 @@ class Str private constructor(private val chars: Array<Char>, private val colors
     * Returns a copy of the character array backing this `fansi.Str`, in case
     * you want to use it to
     */
-  fun getChars() = chars.clone()
+  fun getChars() = chars.copyOf()
   /**
     * Retrieve the character of this string at the given character index
     */
@@ -169,7 +171,7 @@ class Str private constructor(private val chars: Array<Char>, private val colors
     overlayAll(listOf(Triple(attrs, start, end)))
 
   fun overlayAll(attrs: List<Triple<Attrs, Int, Int>>): Str {
-    val newColors = colors.clone()
+    val newColors = colors.copyOf()
     for ((attrs, start, end) in attrs) {
       require(end >= start) {
         "overlay end parameter $end must be >= start parameter $start"
@@ -190,7 +192,7 @@ class Str private constructor(private val chars: Array<Char>, private val colors
 
 
   companion object {
-    val ansiRegex = "(\u009b|\u001b\\[)[0-?]*[ -\\/]*[@-~]".toRegex().toPattern()
+    val ansiRegex = "(\u009b|\u001b\\[)[0-?]*[ -\\/]*[@-~]".toRegex()
 
     /** Shorthand constructor with ErrorMode.Sanitize */
     fun Sanitize(raw: CharSequence) = invoke(raw, ErrorMode.Sanitize)
@@ -213,7 +215,7 @@ class Str private constructor(private val chars: Array<Char>, private val colors
      *                  recognized by Fansi as a valid color.
      */
     operator fun invoke(raw: CharSequence, errorMode: ErrorMode = ErrorMode.Throw): Str {
-      val chars = Array<Char>(raw.length, {Char(0)})
+      val chars = CharArray(raw.length)
       val colors = Array<State>(raw.length, {0})
 
       var currentColor: Long = 0
@@ -301,13 +303,13 @@ class Str private constructor(private val chars: Array<Char>, private val colors
       }
 
       return Str(
-        Arrays.copyOfRange(chars, 0, destIndex),
-        Arrays.copyOfRange(colors, 0, destIndex)
+        chars.copyOfRange(0, destIndex),
+        colors.copyOfRange(0, destIndex)
       )
     }
 
-    fun fromArrays(chars: Array<Char>, colors: Array<State>) =
-      Str(chars.clone(), colors.clone())
+    fun fromArrays(chars: CharArray, colors: Array<State>) =
+      Str(chars.copyOf(), colors.copyOf())
 
     operator fun invoke(vararg args: Str): Str =
       join(args.toList())
@@ -325,6 +327,10 @@ class Str private constructor(private val chars: Array<Char>, private val colors
     fun join(args: Iterable<Str>): Str =
       join(args, Str(""))
 
+    // In case we need to consome the sequence more than once use this because it will make it permanant
+    fun joinSafe(args: Iterator<Str>) =
+      join(args.asSequence().toList())
+
     fun join(args: Iterator<Str>, sep: String): Str =
       join(args.asSequence().toList(), sep.toStr())
 
@@ -333,7 +339,7 @@ class Str private constructor(private val chars: Array<Char>, private val colors
 
     fun join(args: Iterable<Str>, sep: Str): Str {
       val length = args.map { it.length + sep.length }.sum() - sep.length
-      val chars = Array<Char>(length, {Char(0)})
+      val chars = CharArray(length)
       val colors = Array<State>(length, {0})
       var j = 0
       for (arg in args){
@@ -399,11 +405,11 @@ sealed interface ErrorMode {
 
   object Throw : ErrorMode {
     override fun handle(sourceIndex: Int, raw: CharSequence): Int {
-      val matcher = Str.ansiRegex.matcher(raw)
+      val result = Str.ansiRegex.find(raw)
       val detail =
-        if (!matcher.find(sourceIndex)) ""
+        if (result == null) ""
         else {
-          val end = matcher.end()
+          val end = result.range.last + 1 // same as range.endExclusive i.e. offset of the last char plus one
           raw.subSequence(sourceIndex + 1, end)
         }
 
@@ -420,9 +426,8 @@ sealed interface ErrorMode {
 
   object Strip : ErrorMode {
     override fun handle(sourceIndex: Int, raw: CharSequence): Int {
-      val matcher = Str.ansiRegex.matcher(raw)
-      matcher.find(sourceIndex) // what is the purpose of this?
-      return matcher.end()
+      val matches = Str.ansiRegex.find(raw)
+      return if (matches != null) matches.range.last + 1 else 0  // same as range.endExclusive i.e. offset of the last char plus one
     }
   }
 }
@@ -475,7 +480,7 @@ sealed interface Attrs{
 
   class Multiple(override val resetMask: Long, override val applyMask: Long, vararg val attrs: Attr): Attrs {
     init {
-      assert(attrs.size != 1)
+      if (attrs.size != 1) throw IllegalArgumentException("Not allowed zero attributes")
     }
 
     override fun hashCode() = attrs.hashCode()

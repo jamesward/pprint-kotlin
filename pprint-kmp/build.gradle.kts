@@ -1,12 +1,14 @@
 plugins {
   kotlin("multiplatform")
-  id("com.android.library")
+  //id("com.android.library")
+  // for testing
+  id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
 }
 
 kotlin {
   jvm()
   js()
-  android()
+//  android()
 
   sourceSets {
     val commonMain by getting {
@@ -20,11 +22,11 @@ kotlin {
         // JVM specific dependencies
       }
     }
-    val androidMain by getting {
-      dependencies {
-        // Android specific dependencies
-      }
-    }
+//    val androidMain by getting {
+//      dependencies {
+//        // Android specific dependencies
+//      }
+//    }
     val jsMain by getting {
       dependencies {
         // JS specific dependencies
@@ -33,7 +35,7 @@ kotlin {
   }
 }
 
-android {
-  compileSdk = 32
-  namespace = "io.exoquery.pprint"
-}
+//android {
+//  compileSdk = 32
+//  namespace = "io.exoquery.pprint"
+//}

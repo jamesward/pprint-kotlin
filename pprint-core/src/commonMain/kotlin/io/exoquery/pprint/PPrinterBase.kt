@@ -27,14 +27,14 @@ data class PPrinterConfig(
   * @param additionalHandlers Provide this to override how certain types are
   *                           pretty-printed at runtime
   */
-abstract class PPrinterBase(open val config: PPrinterConfig): Walker {
+abstract class PPrinterBase<T>(open val config: PPrinterConfig): Walker<T> {
   override val showGenericForCollections get() = config.showGenericForCollections
 
   /**
     * Converts an [[Any]] into a large colored `Str`
     */
   open operator fun invoke(
-    x: Any?,
+    x: T,
     width: Int = config.defaultWidth,
     height: Int = config.defaultHeight,
     indent: Int = config.defaultIndent,
@@ -58,7 +58,7 @@ abstract class PPrinterBase(open val config: PPrinterConfig): Walker {
   /**
     * Converts an [[Any]] into a large colored `Str`
     */
-  open fun <T> pprintln(x: T,
+  open fun pprintln(x: T,
                   width: Int = config.defaultWidth,
                   height: Int = config.defaultHeight,
                   indent: Int = config.defaultIndent,
@@ -66,7 +66,7 @@ abstract class PPrinterBase(open val config: PPrinterConfig): Walker {
                   escapeUnicode: Boolean = config.defaultEscapeUnicode,
                   showFieldNames: Boolean = config.defaultShowFieldNames): Unit {
     tokenize(
-      x as Any,
+      x,
       width,
       height,
       indent,
@@ -82,7 +82,7 @@ abstract class PPrinterBase(open val config: PPrinterConfig): Walker {
     * certain width and truncated at a certain height
     */
   open fun tokenize(
-    x: Any?,
+    x: T,
     width: Int = config.defaultWidth,
     height: Int = config.defaultHeight,
     indent: Int = config.defaultIndent,
